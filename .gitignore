@@ -1,0 +1,20 @@
+# ignore dvgrab default video files
+*.avi
+*.dv
+*.dif
+*.mov
+*.jpg
+*.jpeg
+*.m2t
+
+# ignore dvgrab subtile files
+*.srt
+*.srt0
+*.srt1
+
+# ignore the final h.264 mp4 output
+*.mp4
+
+# ignore the exiftool backup file
+*_original
+
