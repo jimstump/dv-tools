@@ -1,6 +1,9 @@
 #!/bin/bash
 
-## Fork from https://gist.github.com/jhubble
+## Fork from https://gist.github.com/githof
+## https://gist.github.com/githof/482dee01b6a9933781d391097483c467
+
+## Which is itself a fork from https://gist.github.com/jhubble
 ## https://gist.github.com/jhubble/546852d27cf8a22558f9d4178896ee64
 
 # This script can be used to convert .dv files downloaded from a minidv camcorder to .mp4 files convenient for storing/uploading
@@ -48,6 +51,10 @@
 # exiftool Clip\ 01.mp4 -datetimeoriginal="2007:10:15 08:15:00"
 # To copy that timestamp to other fields:
 # exiftool Clip\ 01.mp4 "-mediacreatedate<datetimeoriginal" "-mediamodifydate<datetimeoriginal" "-FileCreateDate<datetimeoriginal" "-createdate<datetimeoriginal" "-modifydate<datetimeoriginal" "-filemodifydate<datetimeoriginal" "-filecreatedate<datetimeoriginal"
+#
+# Improvement by jimstump:
+# If a .srt or .srt0 sidecar subtitle file exists (like dvgrab can generate)
+# then embed that file as a subtitle in the generated mp4 file.
 
 #------------------
 # Options settings
@@ -82,9 +89,29 @@ convert_file ()
 {
         file="$1"
         out=${file%.*}.mp4
+        srt_file=${file%.*}.srt
+
+        if [ ! -f "$srt_file" ]; then
+            srt_file=${file%.*}.srt0
+
+            if [ ! -f "$srt_file" ]; then
+                srt_file=""
+            fi
+        fi
+
         echo "$file -- $out"
-        echo ffmpeg -i "$file" $ffopts "$out"
-        ffmpeg -i "$file" $ffopts "$out"
+
+        if [ -n "$srt_file" ]; then
+            srt_opts="-c:s mov_text"
+
+            # we are going to embed the srt into the mp4
+            echo ffmpeg -i "$file" -i "$srt_file" $ffopts $srt_opts "$out"
+            ffmpeg -i "$file" -i "$srt_file" $ffopts $srt_opts "$out"
+        else
+            echo ffmpeg -i "$file" $ffopts "$out"
+            ffmpeg -i "$file" $ffopts "$out"
+        fi
+
         exiftool -tagsfromfile "$file" "-xmp:datetimeoriginal<datetimeoriginal" "$out"
         exiftool "$out" "-mediacreatedate<datetimeoriginal" "-mediamodifydate<datetimeoriginal"
         exiftool "$out" "-FileModifyDate<datetimeoriginal" "-FileCreateDate<datetimeoriginal" "-CreateDate<datetimeoriginal"
